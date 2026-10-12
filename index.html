@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ML CI/CD Pipeline Deployment Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      --card-bg: rgba(30, 41, 59, 0.75);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --success: #10b981;
+      --success-glow: rgba(16, 185, 129, 0.35);
+      --accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.5rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 860px;
+      backdrop-filter: blur(16px);
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 2.75rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(99, 102, 241, 0.15);
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .badge-pipeline {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 9999px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #34d399;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--success);
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.4); opacity: 0.6; }
+    }
+
+    h1 {
+      font-size: 2.3rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(to right, #ffffff, #cbd5e1, #818cf8);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2.25rem;
+    }
+
+    .metric-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 18px;
+      padding: 1.5rem;
+      transition: transform 0.25s ease, border-color 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      opacity: 0.8;
+    }
+
+    .metric-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(99, 102, 241, 0.35);
+    }
+
+    .metric-title {
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+
+    .metric-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: baseline;
+      gap: 0.4rem;
+    }
+
+    .metric-value.accuracy {
+      color: #34d399;
+      font-size: 2rem;
+      text-shadow: 0 0 20px var(--success-glow);
+    }
+
+    .metric-detail {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+    }
+
+    .workflow-section {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 18px;
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .workflow-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .workflow-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .pipeline-steps {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      padding: 0.5rem 0;
+    }
+
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      z-index: 1;
+    }
+
+    .step-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #a5b4fc;
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
+
+    .step.completed .step-icon {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.6);
+      color: #34d399;
+    }
+
+    .step-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .step.completed .step-label {
+      color: var(--text-main);
+    }
+
+    .step-divider {
+      flex: 1;
+      height: 2px;
+      background: linear-gradient(90deg, #10b981, #6366f1);
+      margin: 0 8px -20px 8px;
+    }
+
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 1rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      padding: 0.85rem 1rem;
+      text-align: left;
+    }
+
+    th {
+      background: rgba(30, 41, 59, 0.8);
+      color: var(--text-muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    td {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+    }
+
+    .status-pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 2rem;
+    }
+
+    @media (max-width: 640px) {
+      .container { padding: 1.5rem; }
+      h1 { font-size: 1.75rem; }
+      .pipeline-steps { flex-direction: column; gap: 1.25rem; }
+      .step-divider { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <div class="badge-pipeline">
+        <span class="pulse-dot"></span>
+        CI/CD Deployment Status: Active & Healthy
+      </div>
+      <h1>MLOps Deployment Portal</h1>
+      <p class="subtitle">Automated Continuous Integration & Continuous Deployment for Machine Learning</p>
+    </div>
+
+    <!-- Metrics Grid -->
+    <div class="metrics-grid">
+      <!-- Model Name -->
+      <div class="metric-card">
+        <div class="metric-title">Machine Learning Model</div>
+        <div class="metric-value">Random Forest</div>
+        <div class="metric-detail">Classifier (50 estimators, scikit-learn)</div>
+      </div>
+
+      <!-- Dataset Used -->
+      <div class="metric-card">
+        <div class="metric-title">Dataset Used</div>
+        <div class="metric-value">Iris Dataset</div>
+        <div class="metric-detail">150 samples • 4 features • 3 classes</div>
+      </div>
+
+      <!-- Model Accuracy -->
+      <div class="metric-card">
+        <div class="metric-title">Model Accuracy</div>
+        <div class="metric-value accuracy">100.00%</div>
+        <div class="metric-detail">Evaluated on test split (random_state=42)</div>
+      </div>
+    </div>
+
+    <!-- CI/CD Workflow Pipeline Section -->
+    <div class="workflow-section">
+      <div class="workflow-header">
+        <div class="workflow-title">CI/CD Execution Pipeline Stages</div>
+        <span class="status-pill">PIPELINE: PASS</span>
+      </div>
+
+      <div class="pipeline-steps">
+        <div class="step completed">
+          <div class="step-icon">&#10003;</div>
+          <div class="step-label">1. Code Checkout<br><small>actions/checkout</small></div>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step completed">
+          <div class="step-icon">&#10003;</div>
+          <div class="step-label">2. Setup Python<br><small>Python 3.11</small></div>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step completed">
+          <div class="step-icon">&#10003;</div>
+          <div class="step-label">3. Install & Train<br><small>model.py</small></div>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step completed">
+          <div class="step-icon">&#10003;</div>
+          <div class="step-label">4. Automated Tests<br><small>pytest (5/5)</small></div>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step completed">
+          <div class="step-icon">&#10003;</div>
+          <div class="step-label">5. CD Deploy<br><small>GitHub Pages</small></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pipeline Metadata Table -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Pipeline Property</th>
+            <th>Configuration / Value</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>ML Model Name</strong></td>
+            <td>Random Forest Classifier</td>
+            <td><span class="status-pill">Trained</span></td>
+          </tr>
+          <tr>
+            <td><strong>Dataset Used</strong></td>
+            <td>Iris Flower Dataset (scikit-learn)</td>
+            <td><span class="status-pill">Loaded</span></td>
+          </tr>
+          <tr>
+            <td><strong>Model Accuracy</strong></td>
+            <td>100.00% (Threshold &ge; 90.00%)</td>
+            <td><span class="status-pill">Validated</span></td>
+          </tr>
+          <tr>
+            <td><strong>CI/CD Deployment Status</strong></td>
+            <td>CI &rarr; PASS &rarr; CD &rarr; GitHub Pages Deployed</td>
+            <td><span class="status-pill">Success</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="footer">
+      MLOps Hands-on CI/CD Pipeline &bull; Automated Deployment with GitHub Actions
+    </div>
+  </div>
+
+</body>
+</html>
